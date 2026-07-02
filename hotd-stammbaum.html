@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>House of the Dragon – Stammbaum</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: #080604;
+    color: #e8dcc8;
+    font-family: system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: linear-gradient(180deg, #1a0a06 0%, #080604 100%);
+    border-bottom: 1px solid #2e1f0e;
+    padding: 12px 16px 10px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  header .eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: #c9a84c;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  header h1 {
+    font-family: Georgia, serif;
+    font-size: clamp(15px, 4vw, 24px);
+    color: #e8c96a;
+    font-weight: 400;
+    text-shadow: 0 0 24px #c9a84c55;
+  }
+
+  #legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 7px 14px;
+    background: #0d0a08;
+    border-bottom: 1px solid #2e1f0e;
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: #907860;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  #legend .hint {
+    margin-left: auto;
+    font-size: 9px;
+    color: #60504030;
+  }
+
+  #canvas-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    touch-action: none;
+  }
+
+  svg#tree {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Node styles via JS */
+
+  #detail {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #110d09ee;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid #2e1f0e;
+    padding: 12px 18px;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    gap: 14px;
+  }
+  #detail.visible { display: flex; }
+  #detail .d-name {
+    font-family: Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  #detail .d-sub {
+    font-size: 11px;
+    color: #907860;
+    margin-top: 2px;
+  }
+  #detail .d-dragon {
+    background: #0f0c08;
+    border: 1px solid #c9a84c44;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 11px;
+    color: #c9a84c;
+    white-space: nowrap;
+  }
+  #detail .d-close {
+    background: transparent;
+    border: 1px solid #2e1f0e;
+    color: #907860;
+    border-radius: 4px;
+    width: 30px; height: 30px;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  #zoom-btns {
+    position: fixed;
+    bottom: 70px; right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 40;
+  }
+  #zoom-btns button {
+    width: 34px; height: 34px;
+    border-radius: 5px;
+    background: #1a1208;
+    border: 1px solid #2e1f0e;
+    color: #c9a84c;
+    font-size: 17px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">House of the Dragon · Staffeln 1–2</div>
+  <h1>Stammbaum der Targaryens</h1>
+</header>
+
+<div id="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#0d1020;border:1.5px solid #3a3a80"></div>Schwarze</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0a1a0a;border:1.5px solid #2a5a2a"></div>Grüne</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a1208;border:1.5px solid #5a4010"></div>Neutral</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0e0808;border:1.5px solid #3a1010"></div>Verstorben</div>
+  <div class="legend-item">
+    <svg width="20" height="8"><line x1="0" y1="4" x2="20" y2="4" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="4,3"/></svg>
+    Ehe
+  </div>
+  <div class="legend-item">
+    <svg width="20" height="8"><line x1="0" y1="4" x2="20" y2="4" stroke="#8a6020" stroke-width="1" stroke-dasharray="3,4"/></svg>
+    Bastard
+  </div>
+  <span class="hint">Ziehen · Pinch · Tippen</span>
+</div>
+
+<div id="canvas-wrap">
+  <svg id="tree">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff06" stroke-width="0.5"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid)"/>
+    <g id="pan-group"></g>
+  </svg>
+</div>
+
+<div id="detail">
+  <div style="flex:1">
+    <div class="d-name" id="d-name"></div>
+    <div class="d-sub" id="d-sub"></div>
+  </div>
+  <div class="d-dragon" id="d-dragon" style="display:none"></div>
+  <button class="d-close" onclick="closeDetail()">✕</button>
+</div>
+
+<div id="zoom-btns">
+  <button onclick="zoomBy(0.18)">+</button>
+  <button onclick="resetView()">↺</button>
+  <button onclick="zoomBy(-0.18)">−</button>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────
+const C = {
+  black:   { bg:"#0d1020", border:"#3a3a80", text:"#9090e0", line:"#4a4aaa" },
+  green:   { bg:"#0a1a0a", border:"#2a5a2a", text:"#70c070", line:"#3a8a3a" },
+  neutral: { bg:"#1a1208", border:"#5a4010", text:"#c9a84c", line:"#8a6020" },
+  dead:    { bg:"#0e0808", border:"#3a1010", text:"#604040", line:"#502020" },
+};
+
+const COL_W = 140, ROW_H = 160, NW = 124, NH = 76, PX = 50, PY = 50;
+
+const CHARS = [
+  // Row 0
+  { id:"aemma",    name:"Aemma Arryn",       title:"Königin",         team:"neutral", dragon:null,           pos:[4,0], dead:true  },
+  { id:"viserys1", name:"Viserys I.",         title:"König",           team:"neutral", dragon:"Balerion †",   pos:[6,0]             },
+  { id:"alicent",  name:"Alicent Hightower",  title:"Königin",         team:"green",   dragon:null,           pos:[8,0]             },
+  { id:"daemon",   name:"Daemon Targaryen",   title:"Prinz",           team:"black",   dragon:"Caraxes",      pos:[1,0]             },
+  { id:"laena",    name:"Laena Velaryon",     title:"Lady",            team:"black",   dragon:"Vhagar",       pos:[0,1], dead:true  },
+  { id:"rhaenys",  name:"Rhaenys Targaryen",  title:"Prinzessin",      team:"black",   dragon:"Meleys †",     pos:[11,0], dead:true },
+  { id:"corlys",   name:"Corlys Velaryon",    title:"Seeschlange",     team:"black",   dragon:null,           pos:[12,0]            },
+  // Row 2
+  { id:"rhaenyra", name:"Rhaenyra",           title:"Königin",         team:"black",   dragon:"Syrax",        pos:[4,2]             },
+  { id:"laenor",   name:"Laenor Velaryon",    title:"Ser",             team:"black",   dragon:"Seasmoke",     pos:[2,2]             },
+  { id:"aegon2",   name:"Aegon II.",           title:"König",           team:"green",   dragon:"Sunfyre",      pos:[8,2]             },
+  { id:"helaena",  name:"Helaena",            title:"Prinzessin",      team:"green",   dragon:"Dreamfyre",    pos:[9,2]             },
+  { id:"aemond",   name:"Aemond",             title:"Prinz",           team:"green",   dragon:"Vhagar",       pos:[10,2]            },
+  { id:"daeron",   name:"Daeron",             title:"Prinz",           team:"green",   dragon:"Tessarion",    pos:[11,2]            },
+  { id:"baela",    name:"Baela Targaryen",    title:"Prinzessin",      team:"black",   dragon:"Moondancer",   pos:[1,2]             },
+  { id:"rhaena",   name:"Rhaena Targaryen",   title:"Prinzessin",      team:"black",   dragon:"Sheepstealer",      pos:[0,2]             },
+  // Row 4
+  { id:"jacaerys", name:"Jacaerys",           title:"Prinz",           team:"black",   dragon:"Vermax",       pos:[2,4]             },
+  { id:"lucerys",  name:"Lucerys",            title:"Prinz",           team:"black",   dragon:"Arrax †",      pos:[3,4], dead:true  },
+  { id:"joffrey",  name:"Joffrey",            title:"Prinz",           team:"black",   dragon:"Tyraxes †",    pos:[4,4]             },
+  { id:"aegon3",   name:"Aegon III.",          title:"Prinz",           team:"black",   dragon:"Stormcloud",   pos:[5,4]             },
+  { id:"viserys2", name:"Viserys II.",         title:"Prinz",           team:"black",   dragon:null,           pos:[6,4]             },
+  { id:"jaehaera", name:"Jaehaera",           title:"Prinzessin",      team:"green",   dragon:null,           pos:[8,4]             },
+  { id:"maelor",   name:"Maelor",             title:"Prinz",           team:"green",   dragon:null,           pos:[9,4]             },
+  // Bastards / seeds
+  { id:"addam",    name:"Addam Velaryon",     title:"Drachensame",     team:"black",   dragon:"Seasmoke",     pos:[13,4]            },
+  { id:"alyn",     name:"Alyn Velaryon",      title:"Ser",             team:"black",   dragon:null,           pos:[14,4]            },
+  { id:"hugh",     name:"Hugh Hammer",        title:"Drachensame",     team:"black",   dragon:"Vermithor",    pos:[14,2]            },
+  { id:"ulf",      name:"Ulf",               title:"Drachensame",     team:"black",   dragon:"Silverwing",   pos:[15,2]            },
+];
+
+const RELATIONS = [
+  { from:"aemma",   to:"viserys1", type:"marriage" },
+  { from:"viserys1",to:"alicent",  type:"marriage" },
+  { from:"daemon",  to:"laena",    type:"marriage" },
+  { from:"rhaenys", to:"corlys",   type:"marriage" },
+  { from:"rhaenyra",to:"laenor",   type:"marriage" },
+  { from:"aegon2",  to:"helaena",  type:"marriage" },
+  // children of Viserys+Aemma
+  { from:"viserys1",to:"rhaenyra", type:"child" },
+  // children of Viserys+Alicent
+  { from:"alicent", to:"aegon2",   type:"child" },
+  { from:"alicent", to:"helaena",  type:"child" },
+  { from:"alicent", to:"aemond",   type:"child" },
+  { from:"alicent", to:"daeron",   type:"child" },
+  // Daemon + Laena
+  { from:"daemon",  to:"baela",    type:"child" },
+  { from:"daemon",  to:"rhaena",   type:"child" },
+  // Rhaenys + Corlys → Laena, Laenor (parents of next gen — skipped for simplicity)
+  // Rhaenyra children
+  { from:"rhaenyra",to:"jacaerys", type:"child" },
+  { from:"rhaenyra",to:"lucerys",  type:"child" },
+  { from:"rhaenyra",to:"joffrey",  type:"child" },
+  { from:"rhaenyra",to:"aegon3",   type:"child" },
+  { from:"rhaenyra",to:"viserys2", type:"child" },
+  // Aegon2 + Helaena
+  { from:"aegon2",  to:"jaehaera", type:"child" },
+  { from:"aegon2",  to:"maelor",   type:"child" },
+  // Bastards
+  { from:"corlys",  to:"addam",    type:"bastard" },
+  { from:"corlys",  to:"alyn",     type:"bastard" },
+];
+
+// ── Helpers ──────────────────────────────────────────────────
+const byId = {};
+CHARS.forEach(c => byId[c.id] = c);
+
+function col(char) {
+  return char.dead ? C.dead : C[char.team] || C.neutral;
+}
+function cx(pos) { return PX + pos[0]*COL_W + NW/2; }
+function cy(pos) { return PY + pos[1]*ROW_H + NH/2; }
+
+// ── SVG builder ──────────────────────────────────────────────
+const svg = document.getElementById("tree");
+const g   = document.getElementById("pan-group");
+
+function svgEl(tag, attrs, parent) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+  if (parent) parent.appendChild(el);
+  return el;
+}
+
+// Generation labels
+const GEN_LABELS = [
+  [0, "Generation I"],
+  [2, "Generation II — Hauptcharaktere"],
+  [4, "Generation III — Kinder & Drachensamen"],
+];
+GEN_LABELS.forEach(([row, label]) => {
+  svgEl("text", {
+    x: PX, y: PY + row*ROW_H - 14,
+    "font-size": 10, fill: "#c9a84c", opacity: 0.45,
+    "font-family": "Georgia, serif", "letter-spacing": "0.1em",
+  }, g).textContent = label;
+});
+
+// Relations
+RELATIONS.forEach(r => {
+  const from = byId[r.from], to = byId[r.to];
+  if (!from || !to) return;
+  const fx = cx(from.pos), fy = cy(from.pos);
+  const tx = cx(to.pos),   ty = cy(to.pos);
+
+  if (r.type === "marriage") {
+    const y = Math.min(fy, ty) - NH*0.35;
+    svgEl("line", {
+      x1:fx, y1:y, x2:tx, y2:y,
+      stroke:"#c9a84c", "stroke-width":1.5, "stroke-dasharray":"4,3", opacity:0.55,
+    }, g);
+  } else if (r.type === "child") {
+    const py = fy + NH/2 + 2;
+    const cy2 = ty - NH/2 - 2;
+    const my = (py + cy2) / 2;
+    const lineCol = col(to).line;
+    svgEl("path", {
+      d:`M ${fx} ${py} L ${fx} ${my} L ${tx} ${my} L ${tx} ${cy2}`,
+      fill:"none", stroke:lineCol, "stroke-width":1.5, opacity:0.65,
+    }, g);
+  } else if (r.type === "bastard") {
+    svgEl("path", {
+      d:`M ${fx} ${fy+NH/2} C ${fx} ${ty-40} ${tx} ${ty-40} ${tx} ${ty-NH/2}`,
+      fill:"none", stroke:C.neutral.line, "stroke-width":1,
+      "stroke-dasharray":"3,4", opacity:0.45,
+    }, g);
+  }
+});
+
+// Nodes
+let selectedId = null;
+const nodeEls = {};
+
+CHARS.forEach(char => {
+  const x = PX + char.pos[0]*COL_W;
+  const y = PY + char.pos[1]*ROW_H;
+  const cl = col(char);
+
+  const grp = svgEl("g", { transform:`translate(${x},${y})`, style:"cursor:pointer" }, g);
+
+  // Card bg
+  const rect = svgEl("rect", {
+    x:0, y:0, width:NW, height:NH, rx:6,
+    fill:cl.bg, stroke:cl.border, "stroke-width":1,
+  }, grp);
+
+  // Top bar
+  svgEl("rect", { x:0, y:0, width:NW, height:4, rx:3, fill:cl.border, opacity:0.9 }, grp);
+
+  // Name
+  const nameEl = svgEl("text", {
+    x:NW/2, y:20, "text-anchor":"middle", "dominant-baseline":"middle",
+    "font-size":11, "font-weight":"700", fill:cl.text,
+    "font-family":"Georgia, serif", style:"pointer-events:none",
+  }, grp);
+  nameEl.textContent = char.name.length > 17 ? char.name.slice(0,16)+"…" : char.name;
+
+  // Title
+  const titleEl = svgEl("text", {
+    x:NW/2, y:34, "text-anchor":"middle", "dominant-baseline":"middle",
+    "font-size":9, fill:"#907860",
+    "font-family":"system-ui,sans-serif", style:"pointer-events:none",
+  }, grp);
+  titleEl.textContent = char.title;
+
+  // Dragon
+  if (char.dragon) {
+    const drEl = svgEl("text", {
+      x:NW/2, y:52, "text-anchor":"middle", "dominant-baseline":"middle",
+      "font-size":9, fill:"#c9a84c88",
+      "font-family":"system-ui,sans-serif", style:"pointer-events:none",
+    }, grp);
+    drEl.textContent = "🐉 " + (char.dragon.length > 13 ? char.dragon.slice(0,12)+"…" : char.dragon);
+  }
+
+  // Dead marker
+  if (char.dead) {
+    const dEl = svgEl("text", {
+      x:NW-10, y:12, "text-anchor":"middle", "dominant-baseline":"middle",
+      "font-size":11, fill:"#704040", style:"pointer-events:none",
+    }, grp);
+    dEl.textContent = "✝";
+  }
+
+  nodeEls[char.id] = { grp, rect };
+
+  grp.addEventListener("click", (e) => {
+    e.stopPropagation();
+    // only open detail if we didn't drag
+    if (didDrag) return;
+    if (selectedId === char.id) {
+      deselect();
+    } else {
+      select(char);
+    }
+  });
+});
+
+function select(char) {
+  deselect();
+  selectedId = char.id;
+  const { rect } = nodeEls[char.id];
+  rect.setAttribute("stroke", "#c9a84c");
+  rect.setAttribute("stroke-width", "2");
+  rect.setAttribute("filter", "url(#glow)");
+
+  const cl = col(char);
+  document.getElementById("d-name").textContent = char.name + (char.dead ? " ✝" : "");
+  document.getElementById("d-name").style.color = cl.text;
+  document.getElementById("d-sub").textContent = char.title + " · " + {black:"Schwarze",green:"Grüne",neutral:"Neutral"}[char.team];
+  const dDragon = document.getElementById("d-dragon");
+  if (char.dragon) {
+    dDragon.textContent = "🐉 " + char.dragon;
+    dDragon.style.display = "block";
+  } else {
+    dDragon.style.display = "none";
+  }
+  document.getElementById("detail").classList.add("visible");
+}
+
+function deselect() {
+  if (selectedId && nodeEls[selectedId]) {
+    const { rect } = nodeEls[selectedId];
+    const char = byId[selectedId];
+    const cl = col(char);
+    rect.setAttribute("stroke", cl.border);
+    rect.setAttribute("stroke-width", "1");
+    rect.removeAttribute("filter");
+  }
+  selectedId = null;
+  document.getElementById("detail").classList.remove("visible");
+}
+
+function closeDetail() { deselect(); }
+
+// click on empty svg → deselect
+svg.addEventListener("click", () => { if (!didDrag) deselect(); });
+
+// ── Pan & Zoom (mouse + touch) ────────────────────────────────
+let tx = -80, ty = 10, scale = 0.75;
+const isMobile = window.innerWidth < 600;
+if (isMobile) { tx = -20; ty = 20; scale = 0.45; }
+
+function applyTransform() {
+  g.setAttribute("transform", `translate(${tx},${ty}) scale(${scale})`);
+}
+applyTransform();
+
+// Mouse drag
+let dragging = false, didDrag = false;
+let mx0 = 0, my0 = 0, tx0 = 0, ty0 = 0;
+
+const wrap = document.getElementById("canvas-wrap");
+
+wrap.addEventListener("mousedown", e => {
+  if (e.button !== 0) return;
+  dragging = true; didDrag = false;
+  mx0 = e.clientX; my0 = e.clientY;
+  tx0 = tx; ty0 = ty;
+  wrap.style.cursor = "grabbing";
+});
+window.addEventListener("mousemove", e => {
+  if (!dragging) return;
+  const dx = e.clientX - mx0, dy = e.clientY - my0;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag = true;
+  tx = tx0 + dx; ty = ty0 + dy;
+  applyTransform();
+});
+window.addEventListener("mouseup", () => {
+  dragging = false;
+  wrap.style.cursor = "grab";
+  setTimeout(() => { didDrag = false; }, 50);
+});
+
+wrap.addEventListener("wheel", e => {
+  e.preventDefault();
+  const delta = -e.deltaY * 0.001;
+  scale = Math.min(2.5, Math.max(0.25, scale + delta));
+  applyTransform();
+}, { passive: false });
+
+// Touch: pan + pinch
+let touches0 = null, pinchDist0 = null, scale0 = 1, tx0t = 0, ty0t = 0;
+let touchDidMove = false;
+
+function touchDist(t) {
+  const dx = t[0].clientX - t[1].clientX;
+  const dy = t[0].clientY - t[1].clientY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+wrap.addEventListener("touchstart", e => {
+  touchDidMove = false;
+  touches0 = Array.from(e.touches);
+  tx0t = tx; ty0t = ty; scale0 = scale;
+  if (e.touches.length === 2) {
+    pinchDist0 = touchDist(e.touches);
+  }
+  didDrag = false;
+}, { passive: true });
+
+wrap.addEventListener("touchmove", e => {
+  e.preventDefault();
+  touchDidMove = true;
+  didDrag = true;
+  if (e.touches.length === 1 && touches0?.length === 1) {
+    tx = tx0t + (e.touches[0].clientX - touches0[0].clientX);
+    ty = ty0t + (e.touches[0].clientY - touches0[0].clientY);
+  } else if (e.touches.length === 2 && pinchDist0) {
+    const dist = touchDist(e.touches);
+    const newScale = Math.min(2.5, Math.max(0.25, scale0 * (dist / pinchDist0)));
+    // pan + zoom around midpoint
+    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    const mid0X = (touches0[0].clientX + touches0[1].clientX) / 2;
+    const mid0Y = (touches0[0].clientY + touches0[1].clientY) / 2;
+    tx = midX - (mid0X - tx0t) * (newScale / scale0);
+    ty = midY - (mid0Y - ty0t) * (newScale / scale0);
+    scale = newScale;
+  }
+  applyTransform();
+}, { passive: false });
+
+wrap.addEventListener("touchend", e => {
+  touches0 = Array.from(e.touches);
+  pinchDist0 = null;
+  setTimeout(() => { didDrag = false; }, 80);
+}, { passive: true });
+
+// ── Zoom buttons ──────────────────────────────────────────────
+function zoomBy(d) {
+  scale = Math.min(2.5, Math.max(0.25, scale + d));
+  applyTransform();
+}
+function resetView() {
+  if (window.innerWidth < 600) { tx = -20; ty = 20; scale = 0.45; }
+  else { tx = -80; ty = 10; scale = 0.75; }
+  applyTransform();
+}
+</script>
+</body>
+</html>
